@@ -12,9 +12,11 @@ class CPU:
         self.pc = 0
     
     def ram_read(self, address):
+        """Return a value from memory at a given address."""
         return self.memory[address]
 
     def ram_write(self, value, address):
+        """Write a value into memory at a given address."""
         self.memory[address] = value
 
     def load(self):
