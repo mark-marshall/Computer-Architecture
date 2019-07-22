@@ -11,14 +11,19 @@ class CPU:
         self.ram = 256 * [0]
         self.pc = 0
         self.running = True
+        self.opcodes = {
+            "LDI": 0b10000010,
+            "PRN": 0b01000111,
+            "HLT": 0b00000001,
+        }
     
     def ram_read(self, address):
         """Return a value from memory at a given address."""
-        return self.memory[address]
+        return self.ram[address]
 
     def ram_write(self, value, address):
         """Write a value into memory at a given address."""
-        self.memory[address] = value
+        self.ram[address] = value
 
     def load(self):
         """Load a program into memory."""
@@ -73,4 +78,20 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        while self.running:
+            # fetch the instruction
+            instruction = self.ram[self.pc]
+            # decode
+            if instruction == self.opcodes['LDI']:
+                reg_idx = self.ram[self.pc+1]
+                reg_val = self.ram[self.pc+2]
+                self.reg[reg_idx] = reg_val
+                self.pc += 3
+            elif instruction == self.opcodes['PRN']:
+                reg_idx = self.ram[self.pc+1]
+                print(self.reg[reg_idx])
+                self.pc += 2
+            elif instruction == self.opcodes['HLT']:
+                self.running = False
+            else:
+                sys.exit(1)
