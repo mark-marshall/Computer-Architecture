@@ -7,9 +7,10 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        self.registers = 8 * [0]
-        self.memory = 256 * [0]
+        self.reg = 8 * [0]
+        self.ram = 256 * [0]
         self.pc = 0
+        self.running = True
     
     def ram_read(self, address):
         """Return a value from memory at a given address."""
@@ -28,12 +29,12 @@ class CPU:
 
         program = [
             # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
+            0b10000010, # LDI (store a value to the registers)
+            0b00000000, # in reg index 0
+            0b00001000, # value 8
+            0b01000111, # PRN (print a value)
+            0b00000000, # at reg index 0
+            0b00000001, # HLT --> halt the program
         ]
 
         for instruction in program:
