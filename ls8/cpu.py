@@ -86,12 +86,10 @@ class CPU:
                 reg_idx = self.ram[self.pc+1]
                 reg_val = self.ram[self.pc+2]
                 self.reg[reg_idx] = reg_val
-                self.pc += 3
             elif instruction == self.opcodes['PRN']:
                 reg_idx = self.ram[self.pc+1]
                 print(self.reg[reg_idx])
-                self.pc += 2
             elif instruction == self.opcodes['HLT']:
                 self.running = False
-            else:
                 sys.exit(1)
+            self.pc += (instruction >> 6) + 1
