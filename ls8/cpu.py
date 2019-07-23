@@ -8,8 +8,10 @@ class CPU:
     def __init__(self):
         """Construct a new CPU."""
         self.reg = 8 * [0]
+        self.reg[7] = 0xFF
         self.ram = 256 * [0]
         self.pc = 0
+        self.fl = 0
         self.running = True
         self.opcodes = {
             "LDI": 0b10000010,
