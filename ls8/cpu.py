@@ -25,27 +25,30 @@ class CPU:
         """Write a value into memory at a given address."""
         self.ram[address] = value
 
-    def load(self):
+    def load(self, program):
         """Load a program into memory."""
-
+        # initialize a value for the address
         address = 0
-
-        # For now, we've just hardcoded a program:
-
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI (store a value to the registers)
-            0b00000000, # in reg index 0
-            0b00001000, # value 8
-            0b01000111, # PRN (print a value)
-            0b00000000, # at reg index 0
-            0b00000001, # HLT --> halt the program
-        ]
-
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
-
+        # try and open the program
+        try:
+            with open(program) as program:
+                for line in program:
+                    # split on comment symbols
+                    line_split = line.split('#')
+                    # store pre-comments to a value and trim whitespace
+                    value = line_split[0].strip()
+                    # check for any lines that are purely comments
+                    if value == "":
+                        continue
+                    formatted_value = int(value, 2)
+                    # store it in memory
+                    self.ram[address] = formatted_value
+                    # increment the address
+                    address += 1
+        # sys exit and erroring if file can't be found
+        except FileNotFoundError:
+            print(f"{program} not found")
+            sys.exit(2)
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -56,7 +59,7 @@ class CPU:
             self.reg[reg_a] += self.reg[reg_b]
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
-        elif oop == "DIV":
+        elif op == "DIV":
             self.reg[reg_a] //= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
