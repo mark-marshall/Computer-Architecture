@@ -17,6 +17,12 @@ class CPU:
             "MUL": 0b10100010,
             "HLT": 0b00000001,
         }
+        self.branch_table = {}
+        self.branch_table[self.opcodes['LDI']] = self.ldi
+        self.branch_table[self.opcodes['PRN']] = self.prn
+        self.branch_table[self.opcodes['MUL']] = self.mul
+        self.branch_table[self.opcodes['HLT']] = self.hlt
+        
     
     def ram_read(self, address):
         """Return a value from memory at a given address."""
@@ -53,7 +59,6 @@ class CPU:
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
-
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         elif op == "SUB":
@@ -84,24 +89,33 @@ class CPU:
             print(" %02X" % self.reg[i], end='')
 
         print()
+    
+    def ldi(self):
+        """Run LDI."""
+        reg_idx = self.ram[self.pc+1]
+        reg_val = self.ram[self.pc+2]
+        self.reg[reg_idx] = reg_val
+    
+    def prn(self):
+        """Run PRN."""
+        reg_idx = self.ram[self.pc+1]
+        print(self.reg[reg_idx])
+
+    def mul(self):
+        """Run MUL."""
+        self.alu('MUL', self.ram[self.pc+1], self.ram[self.pc+2])
+    
+    def hlt(self):
+        """Run HLT."""
+        self.running = False
+        sys.exit(1)
 
     def run(self):
         """Run the CPU."""
         while self.running:
             # fetch the instruction
             instruction = self.ram[self.pc]
-            # decode
-            if instruction == self.opcodes['LDI']:
-                reg_idx = self.ram[self.pc+1]
-                reg_val = self.ram[self.pc+2]
-                self.reg[reg_idx] = reg_val
-            elif instruction == self.opcodes['PRN']:
-                reg_idx = self.ram[self.pc+1]
-                print(self.reg[reg_idx])
-            elif instruction == self.opcodes['MUL']:
-                self.alu('MUL', self.ram[self.pc+1], self.ram[self.pc+2])
-            elif instruction == self.opcodes['HLT']:
-                self.running = False
-                sys.exit(1)
+            # access branch table
+            self.branch_table[instruction]()
             # get the num args from the two high bits and increment pc
             self.pc += (instruction >> 6) + 1
