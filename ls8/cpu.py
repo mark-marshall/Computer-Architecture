@@ -14,6 +14,7 @@ class CPU:
         self.opcodes = {
             "LDI": 0b10000010,
             "PRN": 0b01000111,
+            "MUL": 0b10100010,
             "HLT": 0b00000001,
         }
     
@@ -97,6 +98,8 @@ class CPU:
             elif instruction == self.opcodes['PRN']:
                 reg_idx = self.ram[self.pc+1]
                 print(self.reg[reg_idx])
+            elif instruction == self.opcodes['MUL']:
+                self.alu('MUL', self.ram[self.pc+1], self.ram[self.pc+2])
             elif instruction == self.opcodes['HLT']:
                 self.running = False
                 sys.exit(1)
