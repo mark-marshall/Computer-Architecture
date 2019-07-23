@@ -92,4 +92,5 @@ class CPU:
             elif instruction == self.opcodes['HLT']:
                 self.running = False
                 sys.exit(1)
+            # get the num args from the two high bits and increment pc
             self.pc += (instruction >> 6) + 1
