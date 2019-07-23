@@ -7,7 +7,23 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        self.reg = 8 * [0]
+        self.ram = 256 * [0]
+        self.pc = 0
+        self.running = True
+        self.opcodes = {
+            "LDI": 0b10000010,
+            "PRN": 0b01000111,
+            "HLT": 0b00000001,
+        }
+    
+    def ram_read(self, address):
+        """Return a value from memory at a given address."""
+        return self.ram[address]
+
+    def ram_write(self, value, address):
+        """Write a value into memory at a given address."""
+        self.ram[address] = value
 
     def load(self):
         """Load a program into memory."""
@@ -18,12 +34,12 @@ class CPU:
 
         program = [
             # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
+            0b10000010, # LDI (store a value to the registers)
+            0b00000000, # in reg index 0
+            0b00001000, # value 8
+            0b01000111, # PRN (print a value)
+            0b00000000, # at reg index 0
+            0b00000001, # HLT --> halt the program
         ]
 
         for instruction in program:
@@ -62,4 +78,20 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        while self.running:
+            # fetch the instruction
+            instruction = self.ram[self.pc]
+            # decode
+            if instruction == self.opcodes['LDI']:
+                reg_idx = self.ram[self.pc+1]
+                reg_val = self.ram[self.pc+2]
+                self.reg[reg_idx] = reg_val
+                self.pc += 3
+            elif instruction == self.opcodes['PRN']:
+                reg_idx = self.ram[self.pc+1]
+                print(self.reg[reg_idx])
+                self.pc += 2
+            elif instruction == self.opcodes['HLT']:
+                self.running = False
+            else:
+                sys.exit(1)
