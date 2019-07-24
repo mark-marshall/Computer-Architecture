@@ -11,6 +11,7 @@ class CPU:
         self.reg[7] = 0xF4
         self.ram = 256 * [0]
         self.pc = 0
+        self.ir = self.ram[self.pc]
         self.fl = 0b00000000
         self.running = True 
         self.opcodes = {
