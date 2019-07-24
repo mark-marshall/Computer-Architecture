@@ -9,7 +9,6 @@ class CPU:
         """Construct a new CPU."""
         self.reg = 8 * [0]
         self.reg[7] = 0xF4
-        self.sp = reg[7]
         self.ram = 256 * [0]
         self.pc = 0
         self.fl = 0b00000000
@@ -29,8 +28,8 @@ class CPU:
         self.branch_table[self.opcodes['PRN']] = self.prn
         self.branch_table[self.opcodes['MUL']] = self.mul
         self.branch_table[self.opcodes['HLT']] = self.hlt
-        self.branch_table[self.opcodes['PUSH']] = self.PUSH
-        self.branch_table[self.opcodes['POP']] = self.POP
+        self.branch_table[self.opcodes['PUSH']] = self.push
+        self.branch_table[self.opcodes['POP']] = self.pop
     
     def ram_read(self, address):
         """Return a value from memory at a given address."""
@@ -125,6 +124,23 @@ class CPU:
         """Run HLT."""
         self.running = False
         sys.exit(1)
+
+    def push(self):
+        """Run push onto the stack."""
+        reg_idx = self.ram[self.pc+1]
+        push_val = self.reg[reg_idx]
+        sp = self.reg[7]
+        self.ram[sp] = push_val
+        self.reg[7] -= 1
+    
+    def pop(self):
+        """Run pop off the stack."""
+        reg_idx = self.ram[self.pc+1]
+        self.reg[7] += 1
+        sp = self.reg[7]
+        pop_val = self.ram[sp]
+        self.ram[sp] = 0
+        self.reg[reg_idx] = pop_val
 
     def run(self):
         """Run the CPU."""
