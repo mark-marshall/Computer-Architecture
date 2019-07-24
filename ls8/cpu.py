@@ -8,23 +8,29 @@ class CPU:
     def __init__(self):
         """Construct a new CPU."""
         self.reg = 8 * [0]
-        self.reg[7] = 0xFF
+        self.reg[7] = 0xF4
+        self.sp = reg[7]
         self.ram = 256 * [0]
         self.pc = 0
-        self.fl = 0
-        self.running = True
+        self.fl = 0b00000000
+        self.running = True 
         self.opcodes = {
-            "LDI": 0b10000010,
-            "PRN": 0b01000111,
-            "MUL": 0b10100010,
-            "HLT": 0b00000001,
+            "NOP":  0b00000000,
+            "LDI":  0b10000010,
+            "PRN":  0b01000111,
+            "MUL":  0b10100010,
+            "HLT":  0b00000001,
+            "PUSH": 0b01000101,
+            "POP":  0b01000110,
         }
         self.branch_table = {}
+        self.branch_table[self.opcodes['NOP']] = self.nop
         self.branch_table[self.opcodes['LDI']] = self.ldi
         self.branch_table[self.opcodes['PRN']] = self.prn
         self.branch_table[self.opcodes['MUL']] = self.mul
         self.branch_table[self.opcodes['HLT']] = self.hlt
-        
+        self.branch_table[self.opcodes['PUSH']] = self.PUSH
+        self.branch_table[self.opcodes['POP']] = self.POP
     
     def ram_read(self, address):
         """Return a value from memory at a given address."""
@@ -84,7 +90,7 @@ class CPU:
 
         print(f"TRACE: %02X | %02X %02X %02X |" % (
             self.pc,
-            #self.fl,
+            self.fl,
             #self.ie,
             self.ram_read(self.pc),
             self.ram_read(self.pc + 1),
@@ -95,6 +101,10 @@ class CPU:
             print(" %02X" % self.reg[i], end='')
 
         print()
+    
+    def nop(self):
+        """Run NOP."""
+        pass
     
     def ldi(self):
         """Run LDI."""
