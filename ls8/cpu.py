@@ -61,7 +61,11 @@ class CPU:
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
-        if op == "ADD":
+        if op == "INC":
+            self.reg[reg_a] += 1
+        elif op == "DEC":
+            self.reg[reg_a] -= 1
+        elif op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         elif op == "SUB":
             self.reg[reg_a] += self.reg[reg_b]
