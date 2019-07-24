@@ -128,19 +128,30 @@ class CPU:
 
     def push(self):
         """Run push onto the stack."""
+        # grab the target reg idx
         reg_idx = self.ram[self.pc+1]
+        # grab the value to be pushed from the reg idx
         push_val = self.reg[reg_idx]
+        # grab the stack pointer
         sp = self.reg[7]
+        # push the value onto the stack
         self.ram[sp] = push_val
+        # decremment the sp by 1
         self.reg[7] -= 1
     
     def pop(self):
         """Run pop off the stack."""
+        # grab the target reg idx
         reg_idx = self.ram[self.pc+1]
+        # return the sp to the last value in stack
         self.reg[7] += 1
+        # grab the new stack pointer
         sp = self.reg[7]
+        # grab the value to be popped from the stack
         pop_val = self.ram[sp]
+        # set the last stack value to 0
         self.ram[sp] = 0
+        # add the popped value to the reg idx
         self.reg[reg_idx] = pop_val
 
     def run(self):
