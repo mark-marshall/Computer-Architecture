@@ -13,7 +13,7 @@ class CPU:
         self.pc = 0
         self.ir = self.ram[self.pc]
         self.fl = 0b00000000
-        self.flag_status = {
+        self.fl_status = {
             "L":  0b00000100,
             "G":  0b00000010,
             "E":  0b00000001,
@@ -212,39 +212,43 @@ class CPU:
     def cmp(self):
         """Compare values in two registers."""
         # do comparison via the ALU
-        flag = self.alu('CMP', self.ram[self.pc+1], self.ram[self.pc+2])
-        if flag == 'L':
-            self.flag = self.flag_status['L']
-        elif flag == 'G':
-            self.flag = self.flag_status['G']
-        elif flag == 'E':
-            self.flag = self.flag_status['E']
+        updated_fl = self.alu('CMP', self.ram[self.pc+1], self.ram[self.pc+2])
+        if updated_fl == 'L':
+            self.fl = self.fl_status['L']
+        elif updated_fl == 'G':
+            self.fl = self.fl_status['G']
+        elif updated_fl == 'E':
+            self.fl = self.fl_status['E']
     
     def jmp(self):
         """Jumps to a given value in a register."""
         # grab the address from the provided register
-        reg_idx = self.ram[pc+1]
+        reg_idx = self.ram[self.pc+1]
         address = self.reg[reg_idx]
         # set the pc to the address
         self.pc = address
     
     def jeq(self):
         """Jumps to a given value in a register if equal flag is true."""
-        if self.flag == self.flag_status['E']:
+        if self.fl == self.fl_status['E']:
             # grab the address from the provided register
-            reg_idx = self.ram[pc+1]
+            reg_idx = self.ram[self.pc+1]
             address = self.reg[reg_idx]
             # set the pc to the address
             self.pc = address
+        else:
+            self.pc += 2
     
     def jne(self):
         """Jumps to a given value in a register if equal flag is false."""
-        if self.flag != self.flag_status['E']:
+        if self.fl != self.fl_status['E']:
             # grab the address from the provided register
-            reg_idx = self.ram[pc+1]
+            reg_idx = self.ram[self.pc+1]
             address = self.reg[reg_idx]
             # set the pc to the address
             self.pc = address
+        else:
+            self.pc += 2
     
     def run(self):
         """Run the CPU."""
