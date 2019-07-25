@@ -22,15 +22,21 @@ class CPU:
             "HLT":  0b00000001,
             "PUSH": 0b01000101,
             "POP":  0b01000110,
+            "CALL": 0b01010000,
+            "RET":  0b00010001,
+            "ADD":  0b10100000,
         }
         self.branch_table = {}
         self.branch_table[self.opcodes['NOP']] = self.nop
         self.branch_table[self.opcodes['LDI']] = self.ldi
         self.branch_table[self.opcodes['PRN']] = self.prn
+        self.branch_table[self.opcodes['ADD']] = self.add
         self.branch_table[self.opcodes['MUL']] = self.mul
         self.branch_table[self.opcodes['HLT']] = self.hlt
         self.branch_table[self.opcodes['PUSH']] = self.push
         self.branch_table[self.opcodes['POP']] = self.pop
+        self.branch_table[self.opcodes['CALL']] = self.call
+        self.branch_table[self.opcodes['RET']] = self.ret
     
     def ram_read(self, address):
         """Return a value from memory at a given address."""
@@ -74,11 +80,13 @@ class CPU:
         elif op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         elif op == "SUB":
-            self.reg[reg_a] += self.reg[reg_b]
+            self.reg[reg_a] -= self.reg[reg_b]
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
         elif op == "DIV":
             self.reg[reg_a] //= self.reg[reg_b]
+        elif op == "MOD":
+            self.reg[reg_a] %= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -116,6 +124,10 @@ class CPU:
         """Run PRN."""
         reg_idx = self.ram[self.pc+1]
         print(self.reg[reg_idx])
+    
+    def add(self):
+        """Run ADD."""
+        self.alu('ADD', self.ram[self.pc+1], self.ram[self.pc+2])
 
     def mul(self):
         """Run MUL."""
@@ -153,6 +165,27 @@ class CPU:
         self.ram[sp] = 0
         # add the popped value to the reg idx
         self.reg[reg_idx] = pop_val
+    
+    def call(self):
+        # get address instruction to hold on stack
+        push_val = (self.pc + 2)
+        # push the address onto the stack
+        sp = self.reg[7]
+        self.ram[sp] = push_val
+        self.reg[7] -= 1
+        # set the pc to the call address
+        reg_idx = self.ram[self.pc+1]
+        call_address = self.reg[reg_idx]
+        self.pc = call_address
+
+    def ret(self):
+        # pop the value from the top of the stack
+        self.reg[7] += 1
+        sp = self.reg[7]
+        ret_address = self.ram[sp]
+        self.ram[sp] = 0
+        # set the pc to the ret address
+        self.pc = ret_address
 
     def run(self):
         """Run the CPU."""
@@ -161,5 +194,8 @@ class CPU:
             instruction = self.ram[self.pc]
             # access branch table
             self.branch_table[instruction]()
+            # check to see if the instruction sets pc directly
+            if instruction in {self.opcodes['CALL'], self.opcodes['RET']}:
+                continue
             # get the num args from the two high bits and increment pc
             self.pc += (instruction >> 6) + 1
