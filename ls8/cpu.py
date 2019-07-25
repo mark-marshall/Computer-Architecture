@@ -11,7 +11,6 @@ class CPU:
         self.reg[7] = 0xF4
         self.ram = 256 * [0]
         self.pc = 0
-        self.ir = self.ram[self.pc]
         self.fl = 0b00000000
         self.fl_status = {
             "L":  0b00000100,
@@ -237,7 +236,8 @@ class CPU:
             # set the pc to the address
             self.pc = address
         else:
-            self.pc += 2
+            instruction = self.ram[self.pc]
+            self.pc += (instruction >> 6) + 1
     
     def jne(self):
         """Jumps to a given value in a register if equal flag is false."""
@@ -248,7 +248,8 @@ class CPU:
             # set the pc to the address
             self.pc = address
         else:
-            self.pc += 2
+            instruction = self.ram[self.pc]
+            self.pc += (instruction >> 6) + 1
     
     def run(self):
         """Run the CPU."""
