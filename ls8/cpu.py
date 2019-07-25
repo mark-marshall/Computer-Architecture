@@ -33,6 +33,7 @@ class CPU:
             "CMP":  0b10100111,
             "JMP":  0b01010100,
             "JEQ":  0b01010101,
+            "JNE":  0b01010110,
         }
         self.branch_table = {}
         self.branch_table[self.opcodes['NOP']] = self.nop
@@ -48,6 +49,7 @@ class CPU:
         self.branch_table[self.opcodes['CMP']] = self.cmp
         self.branch_table[self.opcodes['JMP']] = self.jmp
         self.branch_table[self.opcodes['JEQ']] = self.jeq
+        self.branch_table[self.opcodes['JNE']] = self.jne
     
     def ram_read(self, address):
         """Return a value from memory at a given address."""
@@ -234,7 +236,16 @@ class CPU:
             address = self.reg[reg_idx]
             # set the pc to the address
             self.pc = address
-
+    
+    def jne(self):
+        """Jumps to a given value in a register if equal flag is false."""
+        if self.flag != self.flag_status['E']:
+            # grab the address from the provided register
+            reg_idx = self.ram[pc+1]
+            address = self.reg[reg_idx]
+            # set the pc to the address
+            self.pc = address
+    
     def run(self):
         """Run the CPU."""
         while self.running:
@@ -243,7 +254,7 @@ class CPU:
             # access branch table
             self.branch_table[instruction]()
             # check to see if the instruction sets pc directly
-            if instruction in {self.opcodes['CALL'], self.opcodes['RET'], self.opcodes['JMP'], self.opcodes['JEQ']}:
+            if instruction in {self.opcodes['CALL'], self.opcodes['RET'], self.opcodes['JMP'], self.opcodes['JEQ'], self.opcodes['JNE']}:
                 continue
             # get the num args from the two high bits and increment pc
             self.pc += (instruction >> 6) + 1
