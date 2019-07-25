@@ -12,19 +12,21 @@ class CPU:
         self.ram = 256 * [0]
         self.pc = 0
         self.ir = self.ram[self.pc]
-        self.fl = 0b00000000
+        # fl = 0b00000LGE
+        self.fl = 0b00000000   
         self.running = True 
         self.opcodes = {
             "NOP":  0b00000000,
             "LDI":  0b10000010,
             "PRN":  0b01000111,
+            "ADD":  0b10100000,
             "MUL":  0b10100010,
             "HLT":  0b00000001,
             "PUSH": 0b01000101,
             "POP":  0b01000110,
             "CALL": 0b01010000,
             "RET":  0b00010001,
-            "ADD":  0b10100000,
+            "CMP":  0b10100111,
         }
         self.branch_table = {}
         self.branch_table[self.opcodes['NOP']] = self.nop
@@ -37,6 +39,7 @@ class CPU:
         self.branch_table[self.opcodes['POP']] = self.pop
         self.branch_table[self.opcodes['CALL']] = self.call
         self.branch_table[self.opcodes['RET']] = self.ret
+        self.branch_table[self.opcodes['CMP']] = self.cmp
     
     def ram_read(self, address):
         """Return a value from memory at a given address."""
@@ -87,6 +90,13 @@ class CPU:
             self.reg[reg_a] //= self.reg[reg_b]
         elif op == "MOD":
             self.reg[reg_a] %= self.reg[reg_b]
+        elif op == "CMP":
+            if self.reg[reg_a] > self.reg[reg_b]:
+                return "G"
+            elif self.reg[reg_b] > self.reg[reg_a]:
+                return "L"
+            else:
+                return "E"
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -167,6 +177,7 @@ class CPU:
         self.reg[reg_idx] = pop_val
     
     def call(self):
+        """Make a function call."""
         # get address instruction to hold on stack
         push_val = (self.pc + 2)
         # push the address onto the stack
@@ -179,6 +190,7 @@ class CPU:
         self.pc = call_address
 
     def ret(self):
+        """Return after a function call."""
         # pop the value from the top of the stack
         self.reg[7] += 1
         sp = self.reg[7]
@@ -186,6 +198,17 @@ class CPU:
         self.ram[sp] = 0
         # set the pc to the ret address
         self.pc = ret_address
+
+    def cmp(self):
+        """Compare values in two registers."""
+        # do comparison via the ALU
+        flag = self.alu('CMP', self.ram[self.pc+1], self.ram[self.pc+2])
+        if flag == 'G':
+            self.flag = 0b00000010
+        elif flag == 'L':
+            self.flag = 0b00000100
+        else:
+            self.flag = 0b00000001
 
     def run(self):
         """Run the CPU."""
