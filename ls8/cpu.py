@@ -11,20 +11,28 @@ class CPU:
         self.reg[7] = 0xF4
         self.ram = 256 * [0]
         self.pc = 0
-        self.ir = self.ram[self.pc]
         self.fl = 0b00000000
+        self.fl_status = {
+            "L":  0b00000100,
+            "G":  0b00000010,
+            "E":  0b00000001,
+        }  
         self.running = True 
         self.opcodes = {
             "NOP":  0b00000000,
             "LDI":  0b10000010,
             "PRN":  0b01000111,
+            "ADD":  0b10100000,
             "MUL":  0b10100010,
             "HLT":  0b00000001,
             "PUSH": 0b01000101,
             "POP":  0b01000110,
             "CALL": 0b01010000,
             "RET":  0b00010001,
-            "ADD":  0b10100000,
+            "CMP":  0b10100111,
+            "JMP":  0b01010100,
+            "JEQ":  0b01010101,
+            "JNE":  0b01010110,
         }
         self.branch_table = {}
         self.branch_table[self.opcodes['NOP']] = self.nop
@@ -37,6 +45,10 @@ class CPU:
         self.branch_table[self.opcodes['POP']] = self.pop
         self.branch_table[self.opcodes['CALL']] = self.call
         self.branch_table[self.opcodes['RET']] = self.ret
+        self.branch_table[self.opcodes['CMP']] = self.cmp
+        self.branch_table[self.opcodes['JMP']] = self.jmp
+        self.branch_table[self.opcodes['JEQ']] = self.jeq
+        self.branch_table[self.opcodes['JNE']] = self.jne
     
     def ram_read(self, address):
         """Return a value from memory at a given address."""
@@ -79,6 +91,8 @@ class CPU:
             self.reg[reg_a] -= 1
         elif op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
+        elif op == "ADDI":
+            self.reg[reg_a] += reg_b
         elif op == "SUB":
             self.reg[reg_a] -= self.reg[reg_b]
         elif op == "MUL":
@@ -87,6 +101,26 @@ class CPU:
             self.reg[reg_a] //= self.reg[reg_b]
         elif op == "MOD":
             self.reg[reg_a] %= self.reg[reg_b]
+        elif op == "CMP":
+            if self.reg[reg_b] > self.reg[reg_a]:
+                return "L"
+            elif self.reg[reg_a] > self.reg[reg_b]:
+                return "G"
+            elif self.reg[reg_a] == self.reg[reg_b]:
+                return "E"
+        elif op == "AND":
+            self.reg[reg_a] &= self.reg[reg_b]
+        elif op == "OR":
+            self.reg[reg_a] |= self.reg[reg_b]
+        elif op == "XOR":
+            self.reg[reg_a] ^= self.reg[reg_b]
+        elif op == "NOT":
+            mask = 0b11111111
+            self.reg[reg_a] ^= mask 
+        elif op == "SHL":
+            self.reg[reg_a] <<= self.reg[reg_b]
+        elif op == "SHR":
+            self.reg[reg_a] >>= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -128,6 +162,10 @@ class CPU:
     def add(self):
         """Run ADD."""
         self.alu('ADD', self.ram[self.pc+1], self.ram[self.pc+2])
+    
+    def addi(self):
+        """Run ADD with immediate value."""
+        self.alu('ADDI', self.ram[self.pc+1], self.ram[self.pc+2])
 
     def mul(self):
         """Run MUL."""
@@ -167,6 +205,7 @@ class CPU:
         self.reg[reg_idx] = pop_val
     
     def call(self):
+        """Make a function call."""
         # get address instruction to hold on stack
         push_val = (self.pc + 2)
         # push the address onto the stack
@@ -179,6 +218,7 @@ class CPU:
         self.pc = call_address
 
     def ret(self):
+        """Return after a function call."""
         # pop the value from the top of the stack
         self.reg[7] += 1
         sp = self.reg[7]
@@ -187,6 +227,49 @@ class CPU:
         # set the pc to the ret address
         self.pc = ret_address
 
+    def cmp(self):
+        """Compare values in two registers."""
+        # do comparison via the ALU
+        updated_fl = self.alu('CMP', self.ram[self.pc+1], self.ram[self.pc+2])
+        if updated_fl == 'L':
+            self.fl = self.fl_status['L']
+        elif updated_fl == 'G':
+            self.fl = self.fl_status['G']
+        elif updated_fl == 'E':
+            self.fl = self.fl_status['E']
+    
+    def jmp(self):
+        """Jumps to a given value in a register."""
+        # grab the address from the provided register
+        reg_idx = self.ram[self.pc+1]
+        address = self.reg[reg_idx]
+        # set the pc to the address
+        self.pc = address
+    
+    def jeq(self):
+        """Jumps to a given value in a register if equal flag is true."""
+        if self.fl == self.fl_status['E']:
+            # grab the address from the provided register
+            reg_idx = self.ram[self.pc+1]
+            address = self.reg[reg_idx]
+            # set the pc to the address
+            self.pc = address
+        else:
+            instruction = self.ram[self.pc]
+            self.pc += (instruction >> 6) + 1
+    
+    def jne(self):
+        """Jumps to a given value in a register if equal flag is false."""
+        if self.fl != self.fl_status['E']:
+            # grab the address from the provided register
+            reg_idx = self.ram[self.pc+1]
+            address = self.reg[reg_idx]
+            # set the pc to the address
+            self.pc = address
+        else:
+            instruction = self.ram[self.pc]
+            self.pc += (instruction >> 6) + 1
+    
     def run(self):
         """Run the CPU."""
         while self.running:
@@ -195,7 +278,7 @@ class CPU:
             # access branch table
             self.branch_table[instruction]()
             # check to see if the instruction sets pc directly
-            if instruction in {self.opcodes['CALL'], self.opcodes['RET']}:
+            if instruction in {self.opcodes['CALL'], self.opcodes['RET'], self.opcodes['JMP'], self.opcodes['JEQ'], self.opcodes['JNE']}:
                 continue
             # get the num args from the two high bits and increment pc
             self.pc += (instruction >> 6) + 1
