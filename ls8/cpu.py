@@ -91,6 +91,8 @@ class CPU:
             self.reg[reg_a] -= 1
         elif op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
+        elif op == "ADDI":
+            self.reg[reg_a] += reg_b
         elif op == "SUB":
             self.reg[reg_a] -= self.reg[reg_b]
         elif op == "MUL":
@@ -160,6 +162,10 @@ class CPU:
     def add(self):
         """Run ADD."""
         self.alu('ADD', self.ram[self.pc+1], self.ram[self.pc+2])
+    
+    def addi(self):
+        """Run ADD with immediate value."""
+        self.alu('ADDI', self.ram[self.pc+1], self.ram[self.pc+2])
 
     def mul(self):
         """Run MUL."""
